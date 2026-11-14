@@ -1,6 +1,4 @@
-// 모든 그림을 코드로 그린다 (그림 파일 없음).
-// 주인공·마을 사람·고양이 Carrot은 웹툰 Pepper&Carrot(David Revoy, CC BY 4.0)을 바탕으로 다시 그린 것,
-// 나머지 몬스터·마법·타일은 같은 느낌으로 새로 그린 것.
+// 픽셀 그리기 (코드로 그리는 몬스터·펫·마법 탄). 고양이 캐럿은 웹툰 Pepper&Carrot(David Revoy, CC BY 4.0)을 바탕으로 다시 그린 것.
 import { Pix, shade, tint, rng, makeCanvas } from './pix.js';
 
 const EYE = [42, 26, 18], BLUSH = [241, 155, 138], MOUTH = [122, 59, 42], BOOT = [74, 44, 29];

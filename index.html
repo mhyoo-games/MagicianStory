@@ -4,16 +4,16 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <title>매지션 스토리 — 견습 마법사의 여정</title>
-<meta name="description" content="견습 마법사가 시험을 치르며 초급·중급·상급·익스퍼트 마법사로 성장하는 픽셀 액션 RPG. 8장의 이야기, 아홉 원소 스킬 200개, 장비 200개, 그리고 재앙의 용.">
+<meta name="description" content="견습 마법사가 시험을 치르며 초급·중급·상급·익스퍼트 마법사로 성장하는 탑뷰 픽셀 액션 RPG. 이어진 세계, 아홉 원소 스킬과 특성, 블링크로 피하는 보스 기믹, 퍼즐, 제작·+20 강화, 펫.">
 <link href="https://cdn.jsdelivr.net/gh/quiple/galmuri@v2.40.3/dist/galmuri.css" rel="stylesheet">
 <link rel="stylesheet" href="css/style.css?v=__V__">
-<script type="importmap">{"imports": {"./js/art.js": "./js/art.js?v=__V__", "./js/data/items.js": "./js/data/items.js?v=__V__", "./js/data/monsters.js": "./js/data/monsters.js?v=__V__", "./js/data/skills.js": "./js/data/skills.js?v=__V__", "./js/data/story.js": "./js/data/story.js?v=__V__", "./js/game.js": "./js/game.js?v=__V__", "./js/input.js": "./js/input.js?v=__V__", "./js/main.js": "./js/main.js?v=__V__", "./js/pix.js": "./js/pix.js?v=__V__", "./js/rules.js": "./js/rules.js?v=__V__", "./js/sound.js": "./js/sound.js?v=__V__", "./js/sprites.js": "./js/sprites.js?v=__V__", "./js/ui.js": "./js/ui.js?v=__V__", "./js/world.js": "./js/world.js?v=__V__"}}</script>
+<script type="importmap">{"imports": {"three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/", "./js/audio.js": "./js/audio.js?v=__V__", "./js/bosses.js": "./js/bosses.js?v=__V__", "./js/cast.js": "./js/cast.js?v=__V__", "./js/data/items.js": "./js/data/items.js?v=__V__", "./js/data/monsters.js": "./js/data/monsters.js?v=__V__", "./js/data/pets.js": "./js/data/pets.js?v=__V__", "./js/data/skills.js": "./js/data/skills.js?v=__V__", "./js/data/story.js": "./js/data/story.js?v=__V__", "./js/data/world.js": "./js/data/world.js?v=__V__", "./js/engine/art.js": "./js/engine/art.js?v=__V__", "./js/engine/fx.js": "./js/engine/fx.js?v=__V__", "./js/engine/mapview.js": "./js/engine/mapview.js?v=__V__", "./js/engine/models.js": "./js/engine/models.js?v=__V__", "./js/engine/overlay.js": "./js/engine/overlay.js?v=__V__", "./js/engine/pix.js": "./js/engine/pix.js?v=__V__", "./js/engine/portrait.js": "./js/engine/portrait.js?v=__V__", "./js/engine/sheets.js": "./js/engine/sheets.js?v=__V__", "./js/engine/view.js": "./js/engine/view.js?v=__V__", "./js/game.js": "./js/game.js?v=__V__", "./js/input.js": "./js/input.js?v=__V__", "./js/main.js": "./js/main.js?v=__V__", "./js/mapgen.js": "./js/mapgen.js?v=__V__", "./js/rules.js": "./js/rules.js?v=__V__", "./js/ui.js": "./js/ui.js?v=__V__"}}</script>
 </head>
 <body>
 <div id="app">
   <canvas id="view"></canvas>
+  <canvas id="ov"></canvas>
   <div id="flash"></div>
-
   <div id="hud">
     <div class="me">
       <div id="lvText"></div>
@@ -25,31 +25,25 @@
     <div id="quest"></div>
     <div class="right">
       <div id="goldText"></div>
-      <div class="menus">
-        <button data-open="bag" title="가방 (B)">🎒<small>B</small></button>
-        <button data-open="skills" title="스킬 (K)">📖<small>K</small></button>
-        <button data-open="stats" title="능력치 (C)">🧙<small>C</small></button>
-        <button data-open="story" title="이야기 (N)">📜<small>N</small></button>
-        <button data-open="menu" title="메뉴 (Esc)">⚙️<small>Esc</small></button>
-      </div>
+      <div class="menus"></div>
     </div>
   </div>
   <div id="boss" style="display:none"></div>
-  <div id="timer" style="display:none"></div>
   <div id="banner"></div>
   <div id="toasts"></div>
   <div id="hint" style="display:none"></div>
-
   <div id="touch">
     <div id="stick"><div id="knob"></div></div>
-    <button class="big" data-act="attack">공격</button>
-    <button id="talkBtn" class="talk" data-act="talk" style="display:none">말하기</button>
+    <button class="big" data-act="attack">✦</button>
+    <button class="blinkB" data-act="blink">💨</button>
+    <button id="talkBtn" class="talk" data-act="talk" style="display:none">💬</button>
   </div>
   <div id="slots"></div>
-
   <div id="dialog" style="display:none"></div>
   <div id="panel" style="display:none"></div>
   <div id="title" style="display:none"></div>
+  <div id="fade"></div>
+  <div id="loading"><div class="lbox"><h1>매지션 스토리</h1><div class="lbar"><i id="loadbar"></i></div><p>마법 지팡이를 깎는 중…</p></div></div>
 </div>
 <script type="module" src="./js/main.js?v=__V__"></script>
 </body>
