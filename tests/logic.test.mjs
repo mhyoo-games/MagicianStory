@@ -149,5 +149,14 @@ for (let c = 1; c <= 8; c++) {
   ok(nBasic >= 5, `${c}장 일반 몬스터 기본 공격 ${nBasic.toFixed(1)}번 (스킬이 필요)`);
   ok(nSkill <= 4, `${c}장 일반 몬스터 첫 스킬 ${nSkill.toFixed(1)}번`);
 }
+// 저장 칸 3개: 1번은 예전 저장 이름 그대로, 칸마다 이름이 다름
+{
+  ok(R.SAVE_SLOTS === 3, '저장 칸 3개');
+  ok(R.slotKey(0) === R.SAVE_KEY, '1번 칸 = 예전 저장');
+  ok(new Set([0, 1, 2].map(R.slotKey)).size === 3, '칸마다 다른 이름');
+  const s = R.newSave('테스트', 'boy'); const f = R.slotInfo(s);
+  ok(f.name === '테스트' && f.hero === 'boy' && f.lv === s.lv && f.region, '저장 칸 설명');
+  ok(R.slotInfo(null) === null, '빈 칸');
+}
 if (process.env.TABLE) console.table(table);
 console.log(`규칙 검사 통과 ✔ (${n}개)`);

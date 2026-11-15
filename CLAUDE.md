@@ -10,7 +10,7 @@
 - 규칙은 `js/rules.js` (화면과 상관없는 순수 계산). 맵은 `js/mapgen.js`(시드, 구간: 사냥터·퍼즐·블링크·보스방). 실시간 진행은 `js/game.js`, 스킬 모양은 `js/cast.js`, 보스 기믹은 `js/bosses.js`, 이펙트 `js/engine/fx.js`, 소리·음악 `js/audio.js`(코드로 작곡).
 - 움직임은 방향키만. 나머지 키는 `s.keys`(단축키 설정)로 바꾼다. 키를 더하면 `rules.js`의 DEFAULT_KEYS·ACTION_NAME, `ui.js`의 ACTION_ORDER.
 - 개수·숫자를 바꾸면 `tests/data.test.mjs`·`tests/logic.test.mjs`를 맞춘다 (`TABLE=1 node tests/logic.test.mjs`로 보스 밸런스 표).
-- 저장은 localStorage `magicianstory_save_v2`. 저장 모양을 바꾸면 `fixSave`로 예전 저장을 고친다.
+- 저장은 localStorage, 저장 칸 3개(`rules.js` SAVE_SLOTS·slotKey: 1번 칸 = `magicianstory_save_v2`, 2·3번 = `_2`·`_3`). 지금 칸은 `game.slot`. 저장 모양을 바꾸면 `fixSave`로 예전 저장을 고친다.
 - `index.html`의 importmap에 모든 js 파일이 `?v=__V__`로 들어 있다. 파일을 더하거나 지우면 `python3 tools/importmap.py`. CI(`.github/workflows/pages.yml`): 테스트 → `__V__`를 커밋 번호로 → Pages 배포.
 - 화면·README에 실명을 넣지 않는다. 만든 사람은 "심심풀이". 다른 회사·게임 이름을 넣지 않는다(모티브가 된 옛 게임 이름도). 소스·저장소 링크를 이력서·게임 모음에 넣지 않는다.
 - 게임을 바꾸면 이력서(minhyuk94.github.io `src/data/resume.json`의 `games`)와 게임 모음(mhyoo-games.github.io `games.json`)도 같은 뜻으로 맞춘다.

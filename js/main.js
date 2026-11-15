@@ -40,37 +40,48 @@ document.addEventListener('visibilitychange', () => { if (document.hidden) game.
 
 // ───────── 처음 화면 ─────────
 const title = document.getElementById('title');
-function loadSave() { try { return R.fixSave(JSON.parse(localStorage.getItem(R.SAVE_KEY))); } catch (e) { return null; } }
-const heroLook = (k) => ({ ...HEROES[k].look, shirt: k === 'girl' ? '#c8423a' : '#5a3c82', pants: k === 'girl' ? '#3a3048' : '#46403a', shoes: '#4a3426', hat: '#46283c', band: '#e3b341', robe: k === 'girl' ? '#c8423a' : '#4650a0', trim: '#e3b341', weapon: 'staff', orb: '#ff8a3a' });
+function loadSave(i) { try { return R.fixSave(JSON.parse(localStorage.getItem(R.slotKey(i)))); } catch (e) { return null; } }
+const heroLook = (k) => ({ ...HEROES[k].look, hat: '#46283c', band: '#e3b341', weapon: 'staff', orb: '#ff8a3a', wood: '#7a5232' });
+const when = (t) => { if (!t) return ''; const d = new Date(t), p = (n) => String(n).padStart(2, '0'); return `${d.getMonth() + 1}/${d.getDate()} ${p(d.getHours())}:${p(d.getMinutes())}`; };
 function showTitle() {
-  const sv = loadSave();
+  const saves = Array.from({ length: R.SAVE_SLOTS }, (_, i) => loadSave(i));
   const pep = portrait('title_girl', 'human', heroLook('girl')), crt = portrait('pet_carrot', 'pet', PETS.carrot);
+  const card = (sv, i) => {
+    const n = `<span class="sno">${i + 1}</span>`;
+    if (!sv) return `<div class="slot empty">${n}<button data-new="${i}">✨ 새로 시작 <small>빈 저장 칸</small></button></div>`;
+    const f = R.slotInfo(sv);
+    return `<div class="slot">${n}<img src="${portrait('slot_' + sv.hero, 'human', heroLook(sv.hero))}" alt=""><button data-cont="${i}">▶ ${f.name} <small>Lv.${f.lv} · ${f.ch}장 · ${f.region}${f.at ? ' · ' + when(f.at) : ''}</small></button><button class="del" data-del="${i}" title="지우기">🗑</button></div>`;
+  };
   title.innerHTML = `<div class="tbox"><div class="logo"><img src="${pep}" alt=""><img src="${crt}" alt="" class="cat"><h1>매지션 스토리</h1><p>견습 마법사의 여정 · 아홉 원소와 재앙의 용</p></div>
-    <div class="tbtn">${sv ? `<button id="tContinue">▶ 이어하기 <small>${sv.name} · Lv.${sv.lv} · ${sv.ch}장</small></button>` : ''}<button id="tNew">✨ 새로 시작</button></div>
-    <p class="tfoot">만든 사람 심심풀이 · 주인공과 캐럿의 바탕 Pepper&amp;Carrot (David Revoy, CC BY 4.0) · 픽셀 에셋 Pixel Crawler (Anokolisa)</p></div>`;
+    <div class="tbtn slots">${saves.map(card).join('')}</div>
+    <p class="tfoot">저장 칸은 3개 · 저장은 이 브라우저에만 남아요<br>만든 사람 심심풀이 · 주인공과 캐럿의 바탕 Pepper&amp;Carrot (David Revoy, CC BY 4.0) · 픽셀 에셋 Pixel Crawler (Anokolisa)</p></div>`;
   title.style.display = '';
   music.play('town_title');
-  if (sv) document.getElementById('tContinue').onclick = () => { audio.unlock(); begin(sv); };
-  document.getElementById('tNew').onclick = () => { audio.unlock(); if (sv) ui.confirm('새로 시작하면 지금 저장이 지워져요. 괜찮아요?', newGame); else newGame(); };
+  for (const b of title.querySelectorAll('[data-cont]')) b.onclick = () => { audio.unlock(); const i = +b.dataset.cont; begin(saves[i], false, i); };
+  for (const b of title.querySelectorAll('[data-new]')) b.onclick = () => { audio.unlock(); newGame(+b.dataset.new); };
+  for (const b of title.querySelectorAll('[data-del]')) b.onclick = () => {
+    const i = +b.dataset.del;
+    ui.confirm(`${i + 1}번 저장 칸(${saves[i].name} · Lv.${saves[i].lv})을 지울까요? 되돌릴 수 없어요.`, () => { try { localStorage.removeItem(R.slotKey(i)); } catch (e) { /* */ } showTitle(); });
+  };
 }
-function newGame() {
+function newGame(slot) {
   let pick = 'girl';
   const draw = () => {
-    title.innerHTML = `<div class="tbox new"><h2>주인공 만들기</h2><div class="heroes">${Object.entries(HEROES).map(([k, h]) => `<button data-h="${k}" class="${pick === k ? 'on' : ''}"><img src="${portrait('title_' + k, 'human', heroLook(k))}" alt=""><b>${h.label}</b></button>`).join('')}</div>
+    title.innerHTML = `<div class="tbox new"><h2>주인공 만들기 <small>${slot + 1}번 칸</small></h2><div class="heroes">${Object.entries(HEROES).map(([k, h]) => `<button data-h="${k}" class="${pick === k ? 'on' : ''}"><img src="${portrait('title_' + k, 'human', heroLook(k))}" alt=""><b>${h.label}</b></button>`).join('')}</div>
       <label>이름 <input id="nm" maxlength="8" value="${HEROES[pick].defName}"></label><button id="go">모험 떠나기 →</button><button id="back" class="sub">← 뒤로</button></div>`;
     for (const b of title.querySelectorAll('[data-h]')) b.onclick = () => { pick = b.dataset.h; draw(); };
     document.getElementById('back').onclick = showTitle;
     document.getElementById('go').onclick = () => {
       const name = (document.getElementById('nm').value || HEROES[pick].defName).trim().slice(0, 8) || HEROES[pick].defName;
-      begin(R.newSave(name, pick), true);
+      begin(R.newSave(name, pick), true, slot);
     };
   };
   draw();
 }
-function begin(s, fresh) {
+function begin(s, fresh, slot = 0) {
   audio.unlock();
   title.style.display = 'none'; document.body.classList.add('ingame');
-  game.start(s); if (fresh) game.save();
+  game.slot = slot; game.start(s); if (fresh) game.save();
 }
 
 // ───────── 불러오기 ─────────

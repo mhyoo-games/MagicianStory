@@ -271,7 +271,7 @@ export class UI {
       <div class="vol"><span>🎵 음악</span><input type="range" min="0" max="1" step="0.05" value="${v.music}" data-vol="music"></div>
       <div class="vol"><span>🔊 효과음</span><input type="range" min="0" max="1" step="0.05" value="${v.sfx}" data-vol="sfx"></div>
       <button data-sound>${audio.on ? '🔊 소리 켜짐' : '🔇 소리 꺼짐'}</button>
-      <button data-go="credits">ℹ️ 만든 사람 · 출처</button><button data-save>💾 저장</button><button data-title class="danger">🏠 저장하고 처음 화면으로</button></div>`;
+      <button data-go="credits">ℹ️ 만든 사람 · 출처</button><button data-save>💾 저장 (${(this.g.slot || 0) + 1}번 칸)</button><button data-title class="danger">🏠 저장하고 처음 화면으로</button></div>`;
   }
   vCredits() {
     return `<div class="credits"><p><b>매지션 스토리</b> — 만든 사람 <b>심심풀이</b></p>
@@ -279,7 +279,7 @@ export class UI {
       <p>타일 · 건물 · 나무 · 사람과 몬스터 픽셀 그림: <b>Pixel Crawler</b> — Anokolisa (<a href="https://www.patreon.com/Anokolisa" target="_blank" rel="noopener">patreon.com/Anokolisa</a>). 색을 바꾸거나 옷·모자를 그려 입혀 이 게임에 맞게 고쳐 썼어요.</p>
       <p>글꼴: <b>갈무리</b> — quiple, SIL Open Font License 1.1.</p>
       <p>그리기: three.js (MIT).</p>
-      <p class="dim">음악과 효과음은 모두 브라우저에서 바로 지어내요. 저장은 이 브라우저에만 남아요.</p></div>`;
+      <p class="dim">음악과 효과음은 모두 브라우저에서 바로 지어내요. 저장은 이 브라우저에만 남아요 (저장 칸 3개).</p></div>`;
   }
   vShop(kind) {
     const g = this.g, s = g.s, tab = this.popt.tab || 'buy';
@@ -366,7 +366,7 @@ export class UI {
     on('[data-go]', (b) => this.open(b.dataset.go));
     on('[data-x2]', () => this.close());
     on('[data-sound]', () => { audio.toggle(); this.render(); });
-    on('[data-save]', () => { g.save(); this.toast('💾 저장했어요'); });
+    on('[data-save]', () => { g.save(); this.toast(`💾 ${(g.slot || 0) + 1}번 칸에 저장했어요`); });
     on('[data-title]', () => { g.save(); location.reload(); });
     for (const r of P.querySelectorAll('[data-vol]')) r.oninput = () => audio.setVol(r.dataset.vol, +r.value);
     on('[data-buy]', (b) => { if (R.buy(s, b.dataset.buy)) { sfx('coin'); this.render(); } else sfx('nope'); });

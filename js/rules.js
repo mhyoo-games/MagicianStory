@@ -8,6 +8,15 @@ import { PETS, PET_BOXES, PET_MAX_LV, petEff } from './data/pets.js';
 
 export const MAX_LV = 60;
 export const SAVE_KEY = 'magicianstory_save_v2';
+// 한 브라우저에 저장 칸 3개. 1번 칸은 예전 저장 이름 그대로라 예전 저장이 1번 칸으로 들어온다.
+export const SAVE_SLOTS = 3;
+export const slotKey = (i) => (i <= 0 ? SAVE_KEY : `${SAVE_KEY}_${i + 1}`);
+// 저장 칸에 보일 짧은 설명
+export function slotInfo(s) {
+  if (!s) return null;
+  const r = REGIONS[s.region];
+  return { name: s.name, lv: s.lv, ch: s.ch, hero: s.hero, region: r ? r.name : '', at: s.savedAt || 0 };
+}
 export const RANK_ELEMENTS = [1, 2, 3, 4, 5];
 export const SLOT_COUNT = 8;
 export const DEFAULT_KEYS = {

@@ -57,7 +57,8 @@ export class Game {
     const s = this.s; if (!s || this.exam) return;
     s.pos = this.bossFight || this.defend || this.escort ? null : { x: +this.h.x.toFixed(2), y: +this.h.y.toFixed(2) };
     s.region = this.A ? this.A.id : s.region;
-    try { localStorage.setItem(R.SAVE_KEY, JSON.stringify(s)); } catch (e) { /* */ }
+    s.savedAt = Date.now();
+    try { localStorage.setItem(R.slotKey(this.slot || 0), JSON.stringify(s)); } catch (e) { /* */ }
   }
 
   // ───────────── 주인공 모습 ─────────────
