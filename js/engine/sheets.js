@@ -153,18 +153,25 @@ function dressFrame(src, look, dir) {
       if (look.beard && rel >= 8 && rel < 13 && !up) { const bc = rgb(look.beard === 1 ? (look.hair || '#d8d8d8') : look.beard); if (down ? x > l + 2 && x < r - 2 : x > l + (r - l) * 0.45) put(x, y, bc); }
     }
   }
-  // 치마·로브 자락: 허리 아래를 넓힌다
+  // 치마·로브 자락: 몸통 가운데를 기준으로 아래로 조금씩 넓어지는 A자. 팔은 그대로 앞에 둔다.
   const skirt = look.robe ? { c: rgb(look.robe), trim: look.trim ? rgb(look.trim) : shade(rgb(look.robe), 0.6), y0: top + 19, y1: bot - 1 }
-    : look.skirt ? { c: rgb(look.skirt), trim: look.skirtTrim ? rgb(look.skirtTrim) : shade(rgb(look.skirt), 0.6), y0: top + 19, y1: top + 25 } : null;
+    : look.skirt ? { c: rgb(look.skirt), trim: look.skirtTrim ? rgb(look.skirtTrim) : shade(rgb(look.skirt), 0.6), y0: top + 19, y1: top + 24 } : null;
   if (skirt) {
+    const src0 = new Uint8ClampedArray(d); // 원래 그림 (팔 찾기용)
+    const core = side ? 2 : 3; // 몸통 반폭
+    let cxs = bx; if (side) { let sx = 0, n = 0; for (let x = 0; x < S; x++) if (src0[((top + 22) * S + x) * 4 + 3]) { sx += x; n++; } if (n) cxs = Math.round(sx / n); }
+    const isArm = (x, y) => { const i = (y * S + x) * 4; return src0[i + 3] && Math.abs(x - cxs) > core && y - top <= 23; };
     for (let y = skirt.y0; y <= skirt.y1; y++) {
-      const [l, r] = row(y); if (l < 0) continue;
-      const k = Math.min(3, Math.floor((y - skirt.y0) / 2) + 1);
-      for (let x = l - k; x <= r + k; x++) { const i = (y * S + x) * 4; if (x === l - k || x === r + k) put(x, y, [0, 0, 0]); else if (!d[i + 3] || !isOut(i) || (x > l && x < r)) put(x, y, y >= skirt.y1 - 1 ? skirt.trim : x < (l + r) / 2 ? skirt.c : shade(skirt.c, 0.85)); }
+      const hw = core + Math.min(3, Math.floor((y - skirt.y0) / 2));
+      for (let x = cxs - hw - 1; x <= cxs + hw + 1; x++) {
+        if (isArm(x, y)) continue;
+        const edge = Math.abs(x - cxs) === hw + 1;
+        if (edge) { const i = (y * S + x) * 4; if (!src0[i + 3]) put(x, y, [0, 0, 0]); continue; }
+        put(x, y, y >= skirt.y1 ? skirt.trim : x === cxs - hw || (side && x < cxs - 1) ? tint(skirt.c, 0.12) : x > cxs + 1 ? shade(skirt.c, 0.85) : skirt.c);
+      }
     }
-    const [l, r] = row(skirt.y1); const k = Math.min(3, Math.floor((skirt.y1 - skirt.y0) / 2) + 1);
-    for (let x = l + 1; x <= r - 1; x++) put(x, skirt.y1 + 1, [0, 0, 0]);
-    if (!look.robe) for (let x = l - k + 1; x <= r + k - 1; x++) { const i = ((skirt.y1 + 1) * S + x) * 4; if (!d[i + 3]) put(x, skirt.y1 + 1, [0, 0, 0]); }
+    const hw = core + Math.min(3, Math.floor((skirt.y1 - skirt.y0) / 2));
+    for (let x = cxs - hw; x <= cxs + hw; x++) { const i = ((skirt.y1 + 1) * S + x) * 4; if (!src0[i + 3] || Math.abs(x - cxs) > core) put(x, skirt.y1 + 1, [0, 0, 0]); }
   }
   if (look.ghostly) for (let i = 3; i < d.length; i += 4) if (d[i]) d[i] = 170;
   g.putImageData(im, 0, 0);
@@ -214,7 +221,7 @@ function dressFrame(src, look, dir) {
   let wx = 0, wy = 0, hx = 0;
   if (wc) {
     const [tl, tr] = row(top + 20), hy = top + 20, gy = WEAPON_PX[look.weapon][5];
-    hx = side ? tr - 1 : up ? tl + 1 : tr + 1;
+    hx = side ? Math.max(tr, hr) + 1 : up ? tl + 1 : tr + 1;
     wx = hx - WEAPON_PX[look.weapon][6]; wy = hy - gy;
     if (up) { og.drawImage(wc, wx, wy); og.drawImage(handCanvas(skin), hx - 3, hy - 3); }
   }

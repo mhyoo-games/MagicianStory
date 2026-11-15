@@ -233,11 +233,11 @@ body.touch #slots .slot.basic,body.touch #slots .slot.blinkS{display:none}
 body:not(.ingame) #hud,body:not(.ingame) #slots,body:not(.ingame) #quest{display:none}
 /* 저장 칸 3개 */
 .tbtn.slots{gap:8px}
-.slot{display:flex;align-items:center;gap:8px;width:min(420px,92vw);background:rgba(26,20,40,.7);border:2px solid #4a3a6a;border-radius:12px;padding:6px 8px}
-.slot .sno{width:22px;height:22px;flex:none;border-radius:50%;background:var(--acc);color:#120c22;font-weight:700;line-height:22px;font-size:13px}
-.slot img{width:44px;height:44px;flex:none;image-rendering:pixelated;border-radius:8px;background:#2a2040}
-.tbtn .slot button{min-width:0;flex:1;text-align:left;font-size:16px;padding:8px 12px}
-.tbtn .slot.empty button{text-align:center;border-style:dashed;opacity:.9}
-.tbtn .slot button.del{flex:none;padding:8px 10px;border-width:2px;border-color:#7a3a4a;background:#2a1a28}
+.tslot{display:flex;align-items:center;gap:8px;width:min(420px,92vw);background:rgba(26,20,40,.7);border:2px solid #4a3a6a;border-radius:12px;padding:6px 8px}
+.tslot .sno{width:22px;height:22px;flex:none;border-radius:50%;background:var(--acc);color:#120c22;font-weight:700;line-height:22px;font-size:13px}
+.tslot img{width:44px;height:44px;flex:none;image-rendering:pixelated;border-radius:8px;background:#2a2040}
+.tbtn .tslot button{min-width:0;flex:1;text-align:left;font-size:16px;padding:8px 12px}
+.tbtn .tslot.empty button{text-align:center;border-style:dashed;opacity:.9}
+.tbtn .tslot button.del{flex:none;padding:8px 10px;border-width:2px;border-color:#7a3a4a;background:#2a1a28}
 .tbox.new h2 small{font-size:13px;color:var(--dim)}
-.tbtn .slot button small{position:static;display:block;font:inherit;font-size:11px;color:var(--dim);margin-top:2px;background:none;padding:0}
+.tbtn .tslot button small{position:static;display:block;font:inherit;font-size:11px;color:var(--dim);margin-top:2px;background:none;padding:0}

@@ -48,9 +48,9 @@ function showTitle() {
   const pep = portrait('title_girl', 'human', heroLook('girl')), crt = portrait('pet_carrot', 'pet', PETS.carrot);
   const card = (sv, i) => {
     const n = `<span class="sno">${i + 1}</span>`;
-    if (!sv) return `<div class="slot empty">${n}<button data-new="${i}">✨ 새로 시작 <small>빈 저장 칸</small></button></div>`;
+    if (!sv) return `<div class="tslot empty">${n}<button data-new="${i}">✨ 새로 시작 <small>빈 저장 칸</small></button></div>`;
     const f = R.slotInfo(sv);
-    return `<div class="slot">${n}<img src="${portrait('slot_' + sv.hero, 'human', heroLook(sv.hero))}" alt=""><button data-cont="${i}">▶ ${f.name} <small>Lv.${f.lv} · ${f.ch}장 · ${f.region}${f.at ? ' · ' + when(f.at) : ''}</small></button><button class="del" data-del="${i}" title="지우기">🗑</button></div>`;
+    return `<div class="tslot">${n}<img src="${portrait('slot_' + sv.hero, 'human', heroLook(sv.hero))}" alt=""><button data-cont="${i}">▶ ${f.name} <small>Lv.${f.lv} · ${f.ch}장 · ${f.region}${f.at ? ' · ' + when(f.at) : ''}</small></button><button class="del" data-del="${i}" title="지우기">🗑</button></div>`;
   };
   title.innerHTML = `<div class="tbox"><div class="logo"><img src="${pep}" alt=""><img src="${crt}" alt="" class="cat"><h1>매지션 스토리</h1><p>견습 마법사의 여정 · 아홉 원소와 재앙의 용</p></div>
     <div class="tbtn slots">${saves.map(card).join('')}</div>
