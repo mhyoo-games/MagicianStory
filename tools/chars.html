@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="ko"><head><meta charset="utf-8"><title>캐릭터 그림 보기 (개발용)</title>
+<style>body{background:#3a4a3a;color:#fff;font:13px sans-serif;margin:8px}canvas{image-rendering:pixelated;margin:2px;background:#5a7a4a}.row{display:flex;flex-wrap:wrap;align-items:flex-end;margin-bottom:6px}h3{margin:6px 0 2px}</style>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"}}</script></head>
+<body><div id="out"></div>
+<script type="module">
+import { loadImages, heroSet, npcSet, monsterSet } from '../js/engine/sheets.js';
+import { MONSTERS } from '../js/data/monsters.js';
+import { HEROES, NPCS } from '../js/data/story.js';
+await loadImages('../');
+const out = document.getElementById('out');
+const Z = +(new URLSearchParams(location.search).get('z') || 5);
+function show(title, set, anims = ['idle', 'run']) {
+  const h = document.createElement('h3'); h.textContent = title; out.appendChild(h);
+  const row = document.createElement('div'); row.className = 'row'; out.appendChild(row);
+  for (const a of anims) for (const d of ['down', 'side', 'up']) {
+    const list = (set.anims[a] || {})[d]; if (!list) continue;
+    for (const i of list.slice(0, a === 'idle' ? 1 : 6)) {
+      const S = set.S, c = document.createElement('canvas'); c.width = 40 * Z; c.height = 54 * Z;
+      const g = c.getContext('2d'); g.imageSmoothingEnabled = false;
+      g.drawImage(set.atlas, (i % set.cols) * S + set.ax - 20, Math.floor(i / set.cols) * S + set.ay - 50, 40, 54, 0, 0, 40 * Z, 54 * Z);
+      row.appendChild(c);
+    }
+  }
+}
+const q = new URLSearchParams(location.search);
+const looks = window.LOOKS || {};
+const base = { weapon: 'staff', orb: '#b48cff', wood: '#7a5232' };
+const gear = q.get('gear') ? JSON.parse(q.get('gear')) : null;
+for (const k of Object.keys(HEROES)) { show(HEROES[k].label, heroSet({ ...HEROES[k].look, ...base })); if (gear) show(HEROES[k].label + ' +장비', heroSet({ ...HEROES[k].look, ...base, ...gear })); }
+if (q.get('npc')) for (const id of q.get('npc').split(',')) show(id, npcSet(id, NPCS[id].look), ['idle']);
+if (q.get('mon')) for (const id of q.get('mon').split(',')) show(id, monsterSet(id, MONSTERS[id].model), ['idle']);
+if (q.get('only')) out.querySelectorAll('h3').forEach((h) => { if (HEROES[Object.keys(HEROES).find((k) => HEROES[k].label === h.textContent)]) { h.nextSibling.remove(); h.remove(); } });
+document.title = 'ready';
+</script></body></html>

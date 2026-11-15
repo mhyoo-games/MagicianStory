@@ -65,12 +65,11 @@ export class Game {
     const s = this.s, base = HEROES[s.hero].look;
     const eq = (sl) => { const i = R.equipped(s, sl); return i ? { it: ITEMS[i.id], plus: i.plus || 0 } : null; };
     const st = eq('staff'), hat = eq('hat'), robe = eq('robe'), shoes = eq('shoes');
-    const girl = s.hero === 'girl';
     return {
-      ...base, hairStyle: base.hairStyle, shirt: robe ? robe.it.look.c : girl ? '#c8423a' : '#5a3c82', pants: girl ? '#3a3048' : '#46403a', shoes: shoes ? shoes.it.look.c : '#4a3426',
+      ...base, shoes: shoes ? shoes.it.look.c : base.shoes,
       hat: hat ? hat.it.look.c : null, band: hat ? hat.it.look.band : null, gem: hat ? hat.it.look.gem : null,
       robe: robe ? robe.it.look.c : null, trim: robe ? robe.it.look.trim : null,
-      weapon: 'staff', orb: st ? st.it.look.orb : '#b48cff', wood: st ? st.it.look.wood : '#7a5232',
+      weapon: st && st.it.rar >= 2 ? 'wand' : 'staff', orb: st ? st.it.look.orb : '#b48cff', wood: st ? st.it.look.wood : '#7a5232',
       glow: Math.max(st ? st.plus : 0, hat ? hat.plus : 0, robe ? robe.plus : 0),
     };
   }
@@ -847,7 +846,7 @@ export class Game {
     if (k === WIND) { const push = 6.5 * dt; this.move(h, -push, 0, 0.26); }
     if (h.kx || h.ky) { this.move(h, h.kx * dt, h.ky * dt, 0.26); h.kx *= 0.85; h.ky *= 0.85; if (Math.abs(h.kx) + Math.abs(h.ky) < 0.3) h.kx = h.ky = 0; }
     // 바위 밀기
-    for (const p of Object.values(this.puz)) if (p.P.type === 'boulder' && !p.solved && !p.moving && h.moving) {
+    for (const p of Object.values(this.puz)) if (p.P.type === 'boulder' && !p.solved && !(p.moving > 0) && h.moving) {
       const dx = Math.abs(ax.x) > 0.7 ? Math.sign(ax.x) : 0, dy = Math.abs(ax.y) > 0.7 && !dx ? Math.sign(ax.y) : 0;
       if (!dx && !dy) continue;
       const fx = h.x + dx * 0.55, fy = h.y + dy * 0.55;
@@ -880,7 +879,7 @@ export class Game {
         if (p.lit.every((v) => v > 0)) this.solve(p.P.id);
       }
       if (p.P.type === 'boulder') {
-        if (p.moving > 0) p.moving -= dt;
+        if (p.moving > 0) p.moving = Math.max(0, p.moving - dt);
         p.ax += (p.bx - p.ax) * Math.min(1, dt * 14); p.ay += (p.by - p.ay) * Math.min(1, dt * 14);
         p.mesh.position.set(p.ax + 0.5, 0, p.ay + 0.9);
       }

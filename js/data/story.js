@@ -58,8 +58,10 @@ for (const [id, base] of Object.entries(SHOPKEEP)) {
 }
 
 export const HEROES = {
-  girl: { label: '소녀 마법사', defName: '페퍼', look: { skin: '#f6d3b3', hair: '#8a3b24', hairStyle: 'messy', face: 'hero' } },
-  boy: { label: '소년 마법사', defName: '루카', look: { skin: '#f6d3b3', hair: '#5a3a24', hairStyle: 'short', face: 'hero' } },
+  // 소녀: 어깨까지 오는 붉은 머리, 빨간 원피스(치마), 검은 스타킹, 장화, 끝이 꺾인 넓은 모자
+  girl: { label: '소녀 마법사', defName: '페퍼', look: { skin: '#f6d3b3', hair: '#8a2f1e', hairStyle: 'long', eye: '#2a1c14', shirt: '#b8333a', skirt: '#b8333a', skirtTrim: '#6a1a22', pants: '#2e2636', shoes: '#5a3424', boots: 1, hatStyle: 'witch', face: 'hero' } },
+  // 소년: 짧은 갈색 머리, 청록 웃옷 + 허리띠, 바지, 짧은 보라 망토, 곧게 선 고깔모자
+  boy: { label: '소년 마법사', defName: '루카', look: { skin: '#f0c8a0', hair: '#4a2e1c', hairStyle: 'short', eye: '#24507a', shirt: '#2f7a8a', belt: '#5a3a22', pants: '#4a3a2e', shoes: '#3a2a20', cape: '#5a3a8a', hatStyle: 'cone', face: 'hero' } },
 };
 
 export const PROLOGUE = [

@@ -3,7 +3,7 @@
 매지션 스토리(MagicianStory) — 견습 마법사가 시험(전직)을 치르며 초급·중급·상급·익스퍼트로 크는 탑뷰 픽셀 액션 RPG. 조직 mhyoo-games, 주소 `https://mhyoo-games.github.io/MagicianStory/`. 사용자는 한국어로 대화합니다.
 
 - 빌드 없는 정적 페이지: `index.html` + `js/` (ES 모듈) + `css/`. 그리기는 three.js(CDN)로 하지만 **비스듬한 평행 투영**(`js/engine/view.js`)이라 2D 픽셀처럼 보인다: 땅(x,z)은 그대로, 높이(y)는 화면 위쪽. 1칸 = 16px = 1m. 창·HUD는 HTML(`js/ui.js`), 숫자·이름표·동굴 어둠은 2D 캔버스(`js/engine/overlay.js`).
-- 그림: `assets/px/` = Pixel Crawler(Anokolisa) 시트. 땅은 지역마다 한 장의 그림판에 자동 이음 타일로 찍는다(`js/engine/mapview.js`, 풀·돌·흙은 가운데 빈 고리 모양 타일, 절벽은 위면+얼굴). 사람은 맨몸 시트(Body_A)에 옷·머리·모자·지팡이를 그려 입히고(`js/engine/sheets.js` dressFrame), 에셋 몬스터는 색만 바꿔 쓰며(`MON_PX`), 없는 몬스터·펫·마법 탄은 `js/engine/art.js`(코드 픽셀) + 검은 테두리. 캐릭터는 `js/engine/models.js`의 Actor(그림판 한 장 + 프레임 자리 옮기기).
+- 그림: `assets/px/` = Pixel Crawler(Anokolisa) 시트. 땅은 지역마다 한 장의 그림판에 자동 이음 타일로 찍는다(`js/engine/mapview.js`, 풀·돌·흙은 가운데 빈 고리 모양 타일, 절벽은 위면+얼굴). 사람은 맨몸 시트(Body_A)에 옷·머리·모자를 그려 입히고 지팡이·무기·손은 에셋 시트(weapon_wood·weapon_bone·hands)에서 잘라 쥐여 준다(`js/engine/sheets.js` dressFrame, WEAPON_PX). 소녀=긴 붉은 머리·원피스·넓은 모자, 소년=짧은 머리·웃옷+망토·고깔(`story.js` HEROES). 개발용 보기: `tools/chars.html`, 에셋 몬스터는 색만 바꿔 쓰며(`MON_PX`), 없는 몬스터·펫·마법 탄은 `js/engine/art.js`(코드 픽셀) + 검은 테두리. 캐릭터는 `js/engine/models.js`의 Actor(그림판 한 장 + 프레임 자리 옮기기).
 - 에셋 약관: 따로 떼어 팔거나 나눠 주기 금지 (`assets/px/TERMS-Pixel-Crawler.txt`). 출처 표기(README·게임 안 크레딧·처음 화면)를 유지한다.
 - 주인공·고양이 캐럿은 Pepper&Carrot(David Revoy, CC BY 4.0) 바탕 — 출처 표기(README·게임 안 크레딧·처음 화면)를 꼭 유지한다.
 - 데이터: `js/data/skills.js`(56개: 9원소×6 + 블링크·마나 실드, 원소 특성, Lv.3 특성 A/B), `js/data/items.js`(장비 120 · 재료 · 제작법 · 강화표 +20), `js/data/pets.js`(16종 · 상자), `js/data/monsters.js`, `js/data/world.js`(이어진 25곳 · 테마), `js/data/story.js`(8장, 여러 퀘스트 종류).

@@ -5,7 +5,7 @@ import { Pix, hex, shade, tint, makeCanvas } from './pix.js';
 import * as ART from './art.js';
 
 export const IMG = {};
-const FILES = ['floors', 'walls', 'dungeon', 'veg', 'rocks', 'eso', 'tree_oak', 'tree_pine', 'tree_tall', 'tree_small', 'bwalls', 'roofs', 'bprops', 'bonfire', 'fire', 'anvil'];
+const FILES = ['floors', 'walls', 'dungeon', 'veg', 'rocks', 'eso', 'tree_oak', 'tree_pine', 'tree_tall', 'tree_small', 'bwalls', 'roofs', 'bprops', 'bonfire', 'fire', 'anvil', 'weapon_wood', 'weapon_bone', 'hands'];
 for (const a of ['idle', 'walk', 'run', 'hit', 'death']) for (const d of ['down', 'side', 'up']) FILES.push(`body/${a}_${d}`);
 for (const n of ['wizzard', 'knight', 'rogue']) for (const a of ['idle', 'run', 'death']) FILES.push(`npc/${n}_${a}`);
 FILES.push('npc/peasant_idle', 'npc/peasant_run', 'npc/taverna_idle', 'npc/taverna_run', 'npc/tavernb_idle', 'npc/tavernb_run');
@@ -60,67 +60,145 @@ function finish(set) {
 const SK1 = [217, 160, 102], SK2 = [162, 101, 67], SK3 = [250, 200, 149];
 const near = (d, i, c, t = 18) => Math.abs(d[i] - c[0]) < t && Math.abs(d[i + 1] - c[1]) < t && Math.abs(d[i + 2] - c[2]) < t;
 const rgb = (s) => (Array.isArray(s) ? s : hex(s));
+// 손에 드는 것: Pixel Crawler 무기 시트에서 잘라 쓴다 [시트, x, y, w, h, 쥐는 줄, 자루 x]
+const WEAPON_PX = {
+  staff: ['weapon_wood', 99, 21, 11, 40, 33, 4], // 갈고리 지팡이 + 구슬
+  wand: ['weapon_bone', 99, 22, 10, 39, 30, 4], // 구슬 박힌 마법봉
+  sword: ['weapon_wood', 35, 17, 10, 28, 23, 4],
+  spear: ['weapon_wood', 68, 3, 8, 45, 33, 3],
+  club: ['weapon_wood', 48, 18, 16, 28, 23, 7],
+  axe: ['weapon_wood', 32, 49, 16, 31, 23, 3],
+  bow: ['weapon_wood', 52, 48, 10, 32, 16, 1],
+};
+const lum = (r, g, b) => 0.3 * r + 0.59 * g + 0.11 * b;
+// 나무색(또는 뼈색)을 아이템 나무색으로, 파란 보석을 아이템 구슬색으로
+function weaponCanvas(kind, look) {
+  const W = WEAPON_PX[kind]; if (!W) return null;
+  const [sheet, x, y, w, h] = W, c = crop(sheet, x, y, w, h);
+  const recolor = kind === 'staff' || kind === 'wand';
+  if (recolor) {
+    const g = c.getContext('2d'), im = g.getImageData(0, 0, w, h), d = im.data;
+    const wood = look.wood ? rgb(look.wood) : [122, 82, 50], orb = look.orb ? rgb(look.orb) : [180, 140, 255];
+    const baseL = kind === 'staff' ? lum(181, 115, 63) : lum(189, 145, 104);
+    for (let i = 0; i < d.length; i += 4) {
+      if (!d[i + 3]) continue; const r = d[i], gg = d[i + 1], b = d[i + 2];
+      if (r < 40 && gg < 40 && b < 40) continue; // 테두리
+      const blue = b > r + 40, gray = Math.abs(r - b) < 45 && kind === 'staff';
+      if (gray) continue; // 손잡이 천
+      const k = lum(r, gg, b) / (blue ? lum(88, 168, 242) : baseL), base = blue ? orb : wood;
+      const col = k <= 1 ? shade(base, Math.max(0.25, k)) : tint(base, Math.min(0.8, (k - 1) * 0.9));
+      d[i] = col[0]; d[i + 1] = col[1]; d[i + 2] = col[2];
+    }
+    g.putImageData(im, 0, 0);
+    if (kind === 'staff') { // 갈고리 안에 구슬
+      const p = new Pix(w, h); p.disc(8, 8, 2, orb); p.point(7, 7, tint(orb, 0.7)); p.outline([20, 20, 18, 255]);
+      g.drawImage(p.toCanvas(), 0, 0);
+    }
+  }
+  return c;
+}
+// 손(주먹) 그림: hands 시트 첫 칸을 피부색으로
+function handCanvas(skin) {
+  const c = crop('hands', 4, 5, 7, 7), g = c.getContext('2d'), im = g.getImageData(0, 0, 7, 7), d = im.data;
+  for (let i = 0; i < d.length; i += 4) if (d[i + 3] && d[i] > 40) { const col = d[i] > 220 ? skin : shade(skin, 0.72); d[i] = col[0]; d[i + 1] = col[1]; d[i + 2] = col[2]; }
+  g.putImageData(im, 0, 0); return c;
+}
+const EYE = [76, 181, 40];
 function dressFrame(src, look, dir) {
   const S = src.width, c = cv(S, S), g = c.getContext('2d'); g.drawImage(src, 0, 0);
   const im = g.getImageData(0, 0, S, S), d = im.data;
   let top = S, bot = -1;
   for (let y = 0; y < S; y++) for (let x = 0; x < S; x++) if (d[(y * S + x) * 4 + 3]) { if (y < top) top = y; if (y > bot) bot = y; }
   if (bot < 0) return c;
-  const row = (y) => { let l = -1, r = -1; for (let x = 0; x < S; x++) if (d[(y * S + x) * 4 + 3]) { if (l < 0) l = x; r = x; } return [l, r]; };
+  const side = dir === 'side', up = dir === 'up', down = dir === 'down';
+  const row = (y, dd = d) => { let l = -1, r = -1; for (let x = 0; x < S; x++) if (dd[(y * S + x) * 4 + 3]) { if (l < 0) l = x; r = x; } return [l, r]; };
   const skin = rgb(look.skin || '#f6d3b3'), shirt = rgb(look.robe || look.shirt || '#8a6a4a'), pants = rgb(look.robe || look.pants || '#4a4038'), shoes = rgb(look.shoes || '#4a3426');
-  const hair = look.hair ? rgb(look.hair) : null;
+  const hair = look.hair ? rgb(look.hair) : null, belt = look.belt ? rgb(look.belt) : null, cape = look.cape ? rgb(look.cape) : null;
   const put = (x, y, col, a = 255) => { if (x < 0 || y < 0 || x >= S || y >= S) return; const i = (y * S + x) * 4; d[i] = col[0]; d[i + 1] = col[1]; d[i + 2] = col[2]; d[i + 3] = a; };
   const isOut = (i) => d[i] < 30 && d[i + 1] < 30 && d[i + 2] < 30;
-  const H = bot - top; // 약 29
+  const [hl, hr] = row(top + 6), cx = Math.round((hl + hr) / 2);
+  const [bl, br] = row(top + 16), bx = Math.round((bl + br) / 2); // 몸통 가운데
+  const bootH = look.boots ? 3 : 2;
   for (let y = top; y <= bot; y++) {
     const rel = y - top, [l, r] = row(y);
     for (let x = l; x <= r; x++) {
       const i = (y * S + x) * 4; if (!d[i + 3] || isOut(i)) continue;
+      if (look.eye && near(d, i, EYE, 30)) { put(x, y, rgb(look.eye)); continue; }
       const dark = near(d, i, SK2), lite = near(d, i, SK3), sk = near(d, i, SK1) || dark || lite;
       if (!sk) continue;
       let col;
       if (rel < 13) col = skin;
-      else if (y >= bot - 1) col = shoes;
+      else if (y > bot - bootH) col = shoes;
       else if (rel < 22) col = shirt;
       else col = pants;
       if (rel >= 13 && rel < 22 && look.apron && x > l + 3 && x < r - 3) col = [200, 190, 170];
+      if (belt && !look.robe && rel === 20 && Math.abs(x - bx) <= 4) col = down && Math.abs(x - bx) <= 0 ? [230, 190, 80] : belt;
+      if (cape && !look.robe && down && rel >= 13 && rel <= 14 && Math.abs(x - bx) <= 4) col = Math.abs(x - bx) === 0 && rel === 14 ? [230, 190, 80] : cape;
       put(x, y, dark ? shade(col, 0.72) : lite ? tint(col, 0.25) : col);
-      // 머리카락
+      // 머리카락 (머리 안쪽)
       if (hair && rel < 13) {
-        const w = r - l, back = dir === 'side' ? x <= l + Math.round(w * 0.5) : false;
+        const w = r - l, girl = look.hairStyle === 'long';
         let hh = false;
-        if (dir === 'up') hh = rel < 12;
-        else if (dir === 'down') hh = rel < 4 || (rel < (look.hairLong ? 12 : 8) && (x <= l + 1 || x >= r - 1));
-        else hh = rel < 4 || (rel < (look.hairLong ? 12 : 10) && back);
+        if (up) hh = rel < (girl ? 13 : 11);
+        else if (down) {
+          if (girl) hh = rel < 6 || (rel === 6 && (x - l) % 3 !== 1) || (rel < 13 && (x <= l + 1 || x >= r - 1));
+          else hh = rel < 4 || (rel === 4 && x < l + w * 0.7) || (rel === 5 && x < l + w * 0.35) || (rel < 8 && (x <= l || x >= r));
+        } else {
+          const back = x <= l + Math.round(w * (girl ? 0.55 : 0.45));
+          hh = rel < (girl ? 5 : 4) || (rel === 5 && girl && x < r - 2) || (rel < (girl ? 13 : 9) && back);
+        }
         if (hh) put(x, y, rel < 2 ? tint(hair, 0.2) : dark ? shade(hair, 0.75) : hair);
       }
       // 수염
-      if (look.beard && rel >= 8 && rel < 13 && dir !== 'up') { const bc = rgb(look.beard === 1 ? (look.hair || '#d8d8d8') : look.beard); if (dir === 'down' ? x > l + 2 && x < r - 2 : x > l + (r - l) * 0.45) put(x, y, bc); }
+      if (look.beard && rel >= 8 && rel < 13 && !up) { const bc = rgb(look.beard === 1 ? (look.hair || '#d8d8d8') : look.beard); if (down ? x > l + 2 && x < r - 2 : x > l + (r - l) * 0.45) put(x, y, bc); }
     }
   }
-  // 로브 자락: 다리 둘레를 넓힌다
-  if (look.robe) {
-    const rc = rgb(look.robe), trim = look.trim ? rgb(look.trim) : shade(rc, 0.6);
-    for (let y = top + 19; y <= bot - 1; y++) {
+  // 치마·로브 자락: 허리 아래를 넓힌다
+  const skirt = look.robe ? { c: rgb(look.robe), trim: look.trim ? rgb(look.trim) : shade(rgb(look.robe), 0.6), y0: top + 19, y1: bot - 1 }
+    : look.skirt ? { c: rgb(look.skirt), trim: look.skirtTrim ? rgb(look.skirtTrim) : shade(rgb(look.skirt), 0.6), y0: top + 19, y1: top + 25 } : null;
+  if (skirt) {
+    for (let y = skirt.y0; y <= skirt.y1; y++) {
       const [l, r] = row(y); if (l < 0) continue;
-      const k = Math.min(3, Math.floor((y - top - 19) / 2) + 1);
-      for (let x = l - k; x <= r + k; x++) { const i = (y * S + x) * 4; if (x === l - k || x === r + k) put(x, y, [0, 0, 0]); else if (!d[i + 3] || !isOut(i) || (x > l && x < r)) put(x, y, y >= bot - 2 ? trim : x < (l + r) / 2 ? rc : shade(rc, 0.85)); }
+      const k = Math.min(3, Math.floor((y - skirt.y0) / 2) + 1);
+      for (let x = l - k; x <= r + k; x++) { const i = (y * S + x) * 4; if (x === l - k || x === r + k) put(x, y, [0, 0, 0]); else if (!d[i + 3] || !isOut(i) || (x > l && x < r)) put(x, y, y >= skirt.y1 - 1 ? skirt.trim : x < (l + r) / 2 ? skirt.c : shade(skirt.c, 0.85)); }
     }
-    const [l, r] = row(bot); for (let x = l - 3; x <= r + 3; x++) put(x, bot, [0, 0, 0]);
+    const [l, r] = row(skirt.y1); const k = Math.min(3, Math.floor((skirt.y1 - skirt.y0) / 2) + 1);
+    for (let x = l + 1; x <= r - 1; x++) put(x, skirt.y1 + 1, [0, 0, 0]);
+    if (!look.robe) for (let x = l - k + 1; x <= r + k - 1; x++) { const i = ((skirt.y1 + 1) * S + x) * 4; if (!d[i + 3]) put(x, skirt.y1 + 1, [0, 0, 0]); }
   }
   if (look.ghostly) for (let i = 3; i < d.length; i += 4) if (d[i]) d[i] = 170;
   g.putImageData(im, 0, 0);
-  // 머리 위·손에 드는 것은 따로 그려 테두리를 두른다
-  const [hl, hr] = row(top + 6), cx = Math.round((hl + hr) / 2), p = new Pix(S, S);
-  const side = dir === 'side', up = dir === 'up';
-  if (look.hairStyle === 'messy' && hair && !look.hat && !look.hood) for (const dx of [-4, -1, 2, 4]) { p.point(cx + dx, top - 1, hair); p.point(cx + dx + 1, top - 2, hair); }
+  // 앞(over)·뒤(under)에 따로 그려 테두리를 두른다
+  const p = new Pix(S, S), u = new Pix(S, S);
+  const longHair = hair && look.hairStyle === 'long';
+  if (longHair) { // 어깨까지 내려오는 긴 머리 + 삐친 머리
+    const hc = hair, hd = shade(hair, 0.78);
+    if (down) for (let y = top + 4; y <= top + 16; y++) { const t = y > top + 13 ? 1 : 2; p.rect(hl - t, y, hl - 1, y, y > top + 12 ? hd : hc); p.rect(hr + 1, y, hr + t, y, y > top + 12 ? hd : hc); }
+    if (side) { p.poly([[hl, top + 2], [hl - 3, top + 6], [hl - 4, top + 13], [hl - 2, top + 17], [hl + 2, top + 14], [hl + 3, top + 8]], hc); p.line(hl - 2, top + 8, hl - 1, top + 14, hd); }
+    if (up) { p.poly([[hl - 1, top + 3], [hr + 1, top + 3], [hr + 2, top + 13], [cx + 3, top + 17], [cx - 3, top + 17], [hl - 2, top + 13]], hc); p.line(cx, top + 6, cx, top + 15, hd); p.line(cx - 3, top + 8, cx - 4, top + 14, hd); p.line(cx + 3, top + 8, cx + 4, top + 14, hd); }
+    if (!look.hat && !look.hood) { // 부스스하게 부푼 머리 + 삐친 몇 가닥
+      p.ellipse(hl - 2, top - 2, hr + 2, top + 6, hc); p.line(hl, top, cx - 1, top - 1, tint(hc, 0.2));
+      p.point(hl - 3, top + 1, hc); p.point(hr + 3, top + 2, hc); p.point(cx + 2, top - 3, hc); p.point(cx + 3, top - 3, hc);
+    }
+  }
+  if (hair && look.hairStyle === 'short' && !look.hat && !look.hood) { p.ellipse(hl + 1, top - 1, hr - 1, top + 3, hair); p.line(hl + 2, top, cx, top - 1, tint(hair, 0.2)); p.point(cx + 1, top - 2, hair); p.point(cx + 2, top - 3, hair); }
+  if (hair && look.hairStyle === 'messy' && !look.hat && !look.hood) for (const dx of [-4, -1, 2, 4]) { p.point(cx + dx, top - 1, hair); p.point(cx + dx + 1, top - 2, hair); }
+  if (cape && !look.robe) { // 짧은 망토
+    const c1 = cape, c2 = shade(cape, 0.75);
+    if (up) { p.poly([[bx - 4, top + 13], [bx + 4, top + 13], [bx + 6, top + 24], [bx - 6, top + 24]], c1); p.line(bx - 2, top + 16, bx - 3, top + 23, c2); p.line(bx + 2, top + 16, bx + 3, top + 23, c2); }
+    if (side) { u.poly([[bl + 2, top + 13], [bl + 5, top + 13], [bl + 3, top + 23], [bl - 4, top + 25], [bl - 2, top + 18]], c1); u.line(bl - 1, top + 18, bl - 2, top + 23, c2); }
+  }
   if (look.hat) {
-    const hc = rgb(look.hat), band = look.band ? rgb(look.band) : shade(hc, 0.6), by = top + 3;
-    p.rect(hl - 3, by, hr + 3, by + 1, shade(hc, 0.85)); p.rect(hl - 2, by, hr + 2, by, hc);
+    const hc = rgb(look.hat), band = look.band ? rgb(look.band) : shade(hc, 0.6), by = top + 3, wide = look.hatStyle === 'witch' ? 2 : 0;
+    p.rect(hl - 3 - wide, by, hr + 3 + wide, by + 1, shade(hc, 0.85)); p.rect(hl - 2 - wide, by, hr + 2 + wide, by, hc);
     p.rect(hl + 1, by - 1, hr - 1, by - 1, band);
-    const tipDx = side ? -5 : up ? -3 : 4;
-    p.poly([[hl + 1, by - 1], [hr - 1, by - 1], [cx + 1, by - 7], [cx + tipDx, by - 10], [cx - 1, by - 6]], hc);
-    p.line(cx - 1, by - 3, cx + 1, by - 5, tint(hc, 0.2));
+    if (wide) { // 끝이 꺾인 넓은 모자
+      const tipDx = side ? -6 : up ? -4 : 5;
+      p.poly([[hl + 1, by - 1], [hr - 1, by - 1], [cx + 2, by - 6], [cx + tipDx, by - 11], [cx + tipDx + (tipDx > 0 ? 2 : -2), by - 9], [cx - 2, by - 5]], hc);
+    } else { // 곧게 선 고깔
+      p.poly([[hl + 1, by - 1], [hr - 1, by - 1], [cx + 1, by - 11], [cx, by - 12], [cx - 1, by - 11]], hc);
+    }
+    p.line(cx - 1, by - 3, cx, by - 6, tint(hc, 0.2));
     if (look.gem) p.point(cx, by - 1, rgb(look.gem));
   }
   if (look.hood) { const hc = rgb(look.hood); for (let y = top - 1; y < top + 11; y++) { const [l, r] = row(Math.max(top, y)); for (let x = l - 1; x <= r + 1; x++) { const face = !up && y > top + 3 && (side ? x > cx - 1 : x > l + 2 && x < r - 2); if (!face) p.point(x, y, y === top - 1 ? tint(hc, 0.15) : hc); } } p.poly([[cx - 2, top], [cx + (side ? -6 : 0), top - 4], [cx + 2, top]], hc); }
@@ -129,20 +207,20 @@ function dressFrame(src, look, dir) {
   if (look.ears) { p.poly([[hl, top + 6], [hl - 4, top + 3], [hl, top + 8]], skin); p.poly([[hr, top + 6], [hr + 4, top + 3], [hr, top + 8]], skin); }
   if (look.tail) p.path([[cx - (side ? 4 : 0), top + 21], [cx - (side ? 9 : 2), top + 25], [cx - (side ? 12 : 4), top + 24]], skin, 2);
   if (look.wings) { const wc = rgb(look.wings); p.poly([[cx - 2, top + 14], [cx - 11, top + 8], [cx - 9, top + 18]], wc); p.poly([[cx + 2, top + 14], [cx + 11, top + 8], [cx + 9, top + 18]], wc); }
-  // 손에 든 것
-  const wp = look.weapon, [tl, tr] = row(top + 19), hx = side ? tr + 1 : up ? tl - 1 : tr + 1, hy = top + 20;
-  const wood = look.wood ? rgb(look.wood) : [122, 82, 50];
-  if (wp === 'staff') { p.line(hx, hy - 12, hx, hy + 5, wood); const oc = look.orb ? rgb(look.orb) : [180, 140, 255]; p.disc(hx, hy - 14, 2, oc); p.point(hx, hy - 15, tint(oc, 0.6)); }
-  else if (wp === 'club') { p.line(hx, hy - 6, hx, hy + 2, [122, 82, 50]); p.rect(hx - 1, hy - 9, hx + 1, hy - 6, [100, 70, 40]); }
-  else if (wp === 'sword') { p.line(hx, hy - 9, hx, hy, [220, 220, 230]); p.line(hx - 2, hy - 1, hx + 2, hy - 1, [140, 110, 50]); }
-  else if (wp === 'spear') { p.line(hx, hy - 14, hx, hy + 5, [122, 82, 50]); p.poly([[hx - 1, hy - 14], [hx, hy - 18], [hx + 1, hy - 14]], [210, 210, 220]); }
-  else if (wp === 'axe') { p.line(hx, hy - 9, hx, hy + 3, [100, 70, 40]); p.rect(hx + 1, hy - 9, hx + 3, hy - 5, [190, 190, 200]); }
-  else if (wp === 'bow') { p.path([[hx, hy - 8], [hx + 2, hy - 4], [hx + 2, hy + 1], [hx, hy + 4]], [140, 100, 50]); }
-  p.outline([0, 0, 0, 255]);
-  const over = p.toCanvas();
-  if (up && wp) { const o = cv(S, S), og = o.getContext('2d'); og.drawImage(over, 0, 0); og.drawImage(c, 0, 0); return o; }
-  g.drawImage(over, 0, 0);
-  return c;
+  p.outline([0, 0, 0, 255]); u.outline([0, 0, 0, 255]);
+  const out = cv(S, S), og = out.getContext('2d');
+  // 손에 든 것 (에셋 무기 + 주먹)
+  const wc = weaponCanvas(look.weapon, look);
+  let wx = 0, wy = 0, hx = 0;
+  if (wc) {
+    const [tl, tr] = row(top + 20), hy = top + 20, gy = WEAPON_PX[look.weapon][5];
+    hx = side ? tr - 1 : up ? tl + 1 : tr + 1;
+    wx = hx - WEAPON_PX[look.weapon][6]; wy = hy - gy;
+    if (up) { og.drawImage(wc, wx, wy); og.drawImage(handCanvas(skin), hx - 3, hy - 3); }
+  }
+  og.drawImage(u.toCanvas(), 0, 0); og.drawImage(c, 0, 0); og.drawImage(p.toCanvas(), 0, 0);
+  if (wc && !up) { og.drawImage(wc, wx, wy); og.drawImage(handCanvas(skin), hx - 3, top + 20 - 3); }
+  return out;
 }
 const BODY_ANIMS = { idle: 'idle', walk: 'walk', run: 'run', hit: 'hit', death: 'death' };
 function humanSet(look) {
